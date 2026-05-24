@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./App.css";
 
+const API_URL = "https://xy54dxiqp3.execute-api.us-east-1.amazonaws.com/create-ticket";
+
 function App() {
   const [page, setPage] = useState("client");
 
@@ -8,7 +10,6 @@ function App() {
     <div className="page">
       <nav className="navbar">
         <h2>Cloud HelpDesk</h2>
-
         <div>
           <button onClick={() => setPage("client")}>Client Portal</button>
           <button onClick={() => setPage("admin")}>Admin Dashboard</button>
@@ -21,6 +22,53 @@ function App() {
 }
 
 function ClientPortal() {
+  const [formData, setFormData] = useState({
+    title: "",
+    category: "Network",
+    priority: "Low",
+    description: ""
+  });
+
+  const [message, setMessage] = useState("");
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("Sending ticket...");
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage("Ticket created successfully!");
+        setFormData({
+          title: "",
+          category: "Network",
+          priority: "Low",
+          description: ""
+        });
+      } else {
+        setMessage("Error: " + data.message);
+      }
+    } catch (error) {
+      setMessage("Connection error: " + error.message);
+    }
+  };
+
   return (
     <>
       <header className="hero">
@@ -36,12 +84,23 @@ function ClientPortal() {
         <section className="card form-card">
           <h2>Create New Ticket</h2>
 
-          <form>
+          <form onSubmit={handleSubmit}>
             <label>Issue Title</label>
-            <input type="text" placeholder="Example: Internet is not working" />
+            <input
+              name="title"
+              type="text"
+              placeholder="Example: Internet is not working"
+              value={formData.title}
+              onChange={handleChange}
+              required
+            />
 
             <label>Category</label>
-            <select>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+            >
               <option>Network</option>
               <option>Electricity</option>
               <option>Water Leak</option>
@@ -50,19 +109,31 @@ function ClientPortal() {
             </select>
 
             <label>Priority</label>
-            <select>
+            <select
+              name="priority"
+              value={formData.priority}
+              onChange={handleChange}
+            >
               <option>Low</option>
               <option>Medium</option>
               <option>High</option>
             </select>
 
             <label>Description</label>
-            <textarea placeholder="Describe the problem..." />
+            <textarea
+              name="description"
+              placeholder="Describe the problem..."
+              value={formData.description}
+              onChange={handleChange}
+              required
+            />
 
             <label>Upload Image</label>
             <input type="file" />
 
             <button type="submit">Submit Ticket</button>
+
+            {message && <p className="message">{message}</p>}
           </form>
         </section>
       </main>
